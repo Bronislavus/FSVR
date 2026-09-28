@@ -21,10 +21,18 @@ reads the version out of `CMakeLists.txt`, and writes
 
 ## What goes in the DMG
 
-- `FSVR.component` — the plugin
+- `FSVR-<version>-AU-Installer.pkg` — a classic Installer.app package built
+  by `packaging/macos-pkg/build_pkg.sh` (see that folder's own notes): a
+  welcome page, a readme naming the original authors and where the build
+  came from, the GPL-3 license to accept, and a conclusion page, installing
+  system-wide to `/Library/Audio/Plug-Ins/Components` (asks for an admin
+  password). Built automatically as part of this script if
+  `packaging/macos-pkg/build_pkg.sh` is present; skipped with a warning
+  otherwise.
+- `FSVR.component` — the plugin, unpackaged
 - `Zainstaluj FSVR.command` — installer script, copies to
-  `~/Library/Audio/Plug-Ins/Components/`
-- `PRZECZYTAJ.txt` — install instructions (Polish)
+  `~/Library/Audio/Plug-Ins/Components/` (per-user, no admin password)
+- `PRZECZYTAJ.txt` — install instructions (Polish), covers both
 - `AUTHORS.md` — jameshansen and rgwan, and a link to the upstream repo
 - `LICENSE.txt`, `NOTICE.md`, `README.md` — as in the repo root
 - `FSVR-<version>-source-code.zip` — the full source tree at build time,

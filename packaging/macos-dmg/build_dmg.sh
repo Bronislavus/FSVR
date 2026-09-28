@@ -83,6 +83,25 @@ cp "$TEMPLATES_DIR/PRZECZYTAJ.txt" "$STAGING/PRZECZYTAJ.txt"
 cp "$TEMPLATES_DIR/Zainstaluj_FSVR.command" "$STAGING/Zainstaluj FSVR.command"
 chmod +x "$STAGING/Zainstaluj FSVR.command"
 
+# Classic Installer.app package — welcome/readme/license/conclusion pages,
+# built alongside the .command script rather than instead of it, in case
+# someone would rather not grant an admin password for a system-wide install.
+PKG_BUILDER="$SCRIPT_DIR/../macos-pkg/build_pkg.sh"
+if [[ -x "$PKG_BUILDER" ]]; then
+  info "Buduję też klasyczny instalator .pkg (kreator z autorami i licencją)..."
+  ( cd "$PROJECT_DIR" && "$PKG_BUILDER" )
+  PKG_FILE="$(ls "$PROJECT_DIR"/FSVR-*-AU-Installer.pkg 2>/dev/null | head -1)"
+  if [[ -n "$PKG_FILE" ]]; then
+    cp "$PKG_FILE" "$STAGING/"
+    rm -f "$PKG_FILE"
+    ok "Instalator .pkg dodany do obrazu DMG."
+  else
+    warn "build_pkg.sh nie zwrócił pliku .pkg — DMG pójdzie bez niego."
+  fi
+else
+  warn "packaging/macos-pkg/build_pkg.sh nie znaleziony — pomijam .pkg."
+fi
+
 info "Pakuję pełny kod źródłowy (wymóg licencji GPL-3)..."
 SRC_ZIP="$STAGING/FSVR-${VERSION}-source-code.zip"
 ( cd "$PROJECT_DIR" && \
@@ -106,8 +125,9 @@ echo ""
 echo "  $PROJECT_DIR/$DMG_NAME"
 echo ""
 info "Zawartość DMG:"
+echo "  • FSVR-${VERSION}-AU-Installer.pkg — klasyczny instalator (Kreator Instalacji)"
 echo "  • FSVR.component            — wtyczka Audio Units"
-echo "  • Zainstaluj FSVR.command   — instalator jednym kliknięciem"
+echo "  • Zainstaluj FSVR.command   — instalator jednym kliknięciem (bez hasła admina)"
 echo "  • PRZECZYTAJ.txt            — instrukcja"
 echo "  • AUTHORS.md                — autorzy i pochodzenie kodu"
 echo "  • LICENSE.txt                — GNU GPL v3"

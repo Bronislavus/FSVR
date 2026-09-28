@@ -1,24 +1,40 @@
 FSVR — instrukcja instalacji
 =============================
 
-1. Przeciągnij "FSVR.component" NIE jest tu potrzebne — użyj poniższego
-   skryptu instalującego.
+Sposób 1 — instalator (polecany)
+---------------------------------
+Kliknij dwukrotnie:
 
-2. Kliknij dwukrotnie plik:
+    FSVR-<wersja>-AU-Installer.pkg
 
-       Zainstaluj FSVR.command
+Otworzy się zwykły Kreator Instalacji macOS: strona powitalna, informacja
+o tym skąd pochodzi ten build i kto jest autorem projektu, licencja GPL-3
+do zaakceptowania, i na końcu instalacja. Poprosi o hasło administratora —
+instaluje wtyczkę dla wszystkich kont na tym Macu, w:
 
-   Jeśli macOS pokaże ostrzeżenie o niezidentyfikowanym deweloperze:
-   System Settings > Privacy & Security > przewiń w dół > "Open Anyway"
-   przy komunikacie o FSVR, albo w Finderze: prawy klawisz na pliku ->
-   Open (Otwórz), potwierdź "Open" w oknie dialogowym.
+    /Library/Audio/Plug-Ins/Components/FSVR.component
 
-3. Po zakończeniu skryptu zrestartuj DAW (Logic Pro, GarageBand,
-   Ableton Live, itp.) i wykonaj ponowne skanowanie wtyczek jeśli
-   Twój DAW tego wymaga.
+Jeśli macOS pokaże ostrzeżenie o niezidentyfikowanym deweloperze:
+System Settings > Privacy & Security > przewiń w dół > "Open Anyway"
+przy komunikacie o instalatorze, albo w Finderze: prawy klawisz na pliku
+-> Open (Otwórz), potwierdź "Open" w oknie dialogowym.
 
-Wtyczka zostanie skopiowana do:
+Sposób 2 — skrypt, bez hasła administratora
+---------------------------------------------
+Jeśli nie chcesz podawać hasła administratora, kliknij dwukrotnie:
+
+    Zainstaluj FSVR.command
+
+(to samo ostrzeżenie o deweloperze co wyżej, ta sama reakcja: "Open Anyway"
+albo prawy klawisz -> Open). Ten sposób kopiuje wtyczkę tylko dla Twojego
+konta, do:
+
     ~/Library/Audio/Plug-Ins/Components/FSVR.component
 
-Pełny kod źródłowy (licencja GPL-3) znajduje się w folderze
-"Source Code" wewnątrz tego obrazu DMG.
+Po instalacji, którymkolwiek sposobem
+----------------------------------------
+Zrestartuj DAW (Logic Pro, GarageBand, Ableton Live, itp.) i wykonaj
+ponowne skanowanie wtyczek jeśli Twój DAW tego wymaga.
+
+Pełny kod źródłowy (licencja GPL-3) znajduje się w pliku ZIP na tym
+obrazie DMG.
