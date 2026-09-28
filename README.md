@@ -123,6 +123,13 @@ cmake --build build/cmake --config Release
 ctest --test-dir build/cmake -C Release   # the self checks
 ```
 
+Source obtained any way other than `git clone` — a chat upload, a support agent's export, a manual copy of
+individual folders — is not guaranteed to carry every file under `tools/`. A CMake configure error naming
+`tools/test_effects.cpp` or `tools/render_capture.cpp` as missing means the source tree is incomplete, not
+that those targets are optional: `test_effects` is the effect self check that `build.bat test` and CI both
+run, so dropping it from `CMakeLists.txt` to get a configure to pass silently disables that check instead
+of fixing anything. Re-clone from GitHub rather than editing the targets out.
+
 The plugin needs the submodules and adds one flag:
 
 ```bash
