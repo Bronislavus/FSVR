@@ -1,0 +1,24 @@
+FSVR — instrukcja instalacji
+=============================
+
+1. Przeciągnij "FSVR.component" NIE jest tu potrzebne — użyj poniższego
+   skryptu instalującego.
+
+2. Kliknij dwukrotnie plik:
+
+       Zainstaluj FSVR.command
+
+   Jeśli macOS pokaże ostrzeżenie o niezidentyfikowanym deweloperze:
+   System Settings > Privacy & Security > przewiń w dół > "Open Anyway"
+   przy komunikacie o FSVR, albo w Finderze: prawy klawisz na pliku ->
+   Open (Otwórz), potwierdź "Open" w oknie dialogowym.
+
+3. Po zakończeniu skryptu zrestartuj DAW (Logic Pro, GarageBand,
+   Ableton Live, itp.) i wykonaj ponowne skanowanie wtyczek jeśli
+   Twój DAW tego wymaga.
+
+Wtyczka zostanie skopiowana do:
+    ~/Library/Audio/Plug-Ins/Components/FSVR.component
+
+Pełny kod źródłowy (licencja GPL-3) znajduje się w folderze
+"Source Code" wewnątrz tego obrazu DMG.
