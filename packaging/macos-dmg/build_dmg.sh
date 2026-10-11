@@ -33,6 +33,10 @@ for candidate in "bin/AU/FSVR.component" "build/bin/AU/FSVR.component"; do
     break
   fi
 done
+# Fallback: any single .component in bin/AU, in case the product name changes.
+if [[ -z "$AU_COMPONENT" ]]; then
+  AU_COMPONENT="$(ls -d "$PROJECT_DIR"/bin/AU/*.component 2>/dev/null | head -1)"
+fi
 
 if [[ -z "$AU_COMPONENT" ]]; then
   err "Nie znaleziono FSVR.component (szukano w bin/AU/ i build/bin/AU/)."
@@ -106,10 +110,9 @@ info "Pakuję pełny kod źródłowy (wymóg licencji GPL-3)..."
 SRC_ZIP="$STAGING/FSVR-${VERSION}-source-code.zip"
 ( cd "$PROJECT_DIR" && \
   zip -rq "$SRC_ZIP" . \
-    -x "build/*" -x "bin/*" -x ".git/*" -x "extern/JUCE/*" \
-    -x "extern/clap-juce-extensions/*" -x "*.dmg" )
-ok "Kod źródłowy spakowany (bez extern/JUCE — dostępne osobno na"
-echo "   https://github.com/juce-framework/JUCE, submoduł w .gitmodules)"
+    -x "build/*" -x "bin/*" -x ".git/*" -x "*.dmg" -x "*.pkg" -x ".DS_Store" -x "*/.DS_Store" )
+ok "Kod źródłowy spakowany (bez build/ i bin/). Zależności (CLAP SDK, clap-wrapper,"
+echo "   Apple AudioUnitSDK, dr_libs, stb) pobiera sam CMake przy pierwszej konfiguracji."
 
 info "Buduję obraz DMG..."
 rm -f "$PROJECT_DIR/$DMG_NAME"

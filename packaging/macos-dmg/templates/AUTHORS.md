@@ -25,6 +25,19 @@ License v3 (GPL-3)** — patrz plik `LICENSE.txt` w tym pakiecie oraz
 (w tym danych wyodrębnionych z EPROM-u Yamahy, które nie są objęte
 licencją autorów FSVR).
 
+## Składniki innych autorów
+
+Wtyczka AU zawiera biblioteki pobierane przy kompilacji, każda na własnej
+licencji (szczegóły w `NOTICE.md`): clap-wrapper (MIT), Apple AudioUnitSDK
+(Apache 2.0), dekodery dr_libs i stb_vorbis (domena publiczna / MIT-0),
+a w interfejsie krój Saira (SIL OFL 1.1) i ikony Google Material Symbols
+(Apache 2.0). Wbudowane brzmienia fabryczne (1408 głosów, 384 performance,
+90 Fseq) to dane Yamahy wyodrębnione z EPROM-u — nie są objęte licencją
+autorów FSVR.
+
+Oficjalne wydania projektu (z własnym instalatorem) są na
+https://github.com/musicastudio/FSVR/releases/latest.
+
 ## Znaki towarowe
 
 Yamaha i FS1R są znakami towarowymi Yamaha Corporation. Ten projekt nie

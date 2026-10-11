@@ -36,6 +36,10 @@ for candidate in "bin/AU/FSVR.component" "build/bin/AU/FSVR.component"; do
     break
   fi
 done
+# Fallback: any single .component in bin/AU, in case the product name changes.
+if [[ -z "$AU_COMPONENT" ]]; then
+  AU_COMPONENT="$(ls -d "$PROJECT_DIR"/bin/AU/*.component 2>/dev/null | head -1)"
+fi
 if [[ -z "$AU_COMPONENT" ]]; then
   err "Nie znaleziono FSVR.component (szukano w bin/AU/ i build/bin/AU/)."
   info "Zbuduj wtyczkę najpierw (README.md, sekcja \"Building it\")."

@@ -36,9 +36,10 @@ reads the version out of `CMakeLists.txt`, and writes
 - `AUTHORS.md` — jameshansen and rgwan, and a link to the upstream repo
 - `LICENSE.txt`, `NOTICE.md`, `README.md` — as in the repo root
 - `FSVR-<version>-source-code.zip` — the full source tree at build time,
-  minus `build/`, `bin/`, `.git/` and the JUCE and clap-juce-extensions
-  submodules (those keep their own licences and are fetched separately per
-  `.gitmodules`)
+  minus `build/`, `bin/` and `.git/`. From 0.5.0 on the plug-in no longer
+  uses JUCE or submodules: the first CMake configure downloads the CLAP SDK,
+  clap-wrapper, Apple's AudioUnitSDK and the audio decoders (see
+  `NOTICE.md`), so the zip needs nothing else beyond network access once
 
 The zipped source is there because a `.dmg` is a binary distribution, and
 GPL-3 conditions that on the corresponding source being available with it,
