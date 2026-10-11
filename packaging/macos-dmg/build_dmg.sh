@@ -71,8 +71,14 @@ if [[ ! -f "$PROJECT_DIR/LICENSE" ]]; then
   exit 1
 fi
 
+# Returns the identity's SHA-1 hash, not its name: codesign and productbuild
+# take either, and a name with non-ASCII letters (BRONISŁAW HOŃCA) reached
+# codesign mangled under a non-UTF-8 locale and matched nothing.
 find_identity() {
-  security find-identity -v 2>/dev/null | grep "\"$1:" | head -1 | sed -E 's/^[^"]*"(.*)"$/\1/'
+  security find-identity -v 2>/dev/null | grep "\"$1:" | head -1 | awk '{print $2}'
+}
+identity_name() {
+  security find-identity -v 2>/dev/null | grep "$1" | head -1 | sed -E 's/^[^"]*"(.*)"$/\1/'
 }
 notarize() {  # $1 = file to submit and staple
   info "Wysyłam $(basename "$1") do notaryzacji Apple (zwykle 1–5 minut)..."
@@ -95,8 +101,8 @@ if [[ $DO_SIGN == 1 ]]; then
     echo "  Sprawdź: security find-identity -v"
     exit 1
   fi
-  info "Podpis wtyczki i DMG: $APP_ID"
-  info "Podpis .pkg:          $INST_ID"
+  info "Podpis wtyczki i DMG: $(identity_name "$APP_ID") [$APP_ID]"
+  info "Podpis .pkg:          $(identity_name "$INST_ID") [$INST_ID]"
   export FSVR_SIGN_INSTALLER="$INST_ID"
   if [[ $DO_NOTARIZE == 1 ]]; then
     NOTARY_PROFILE="${FSVR_NOTARY_PROFILE:-FSVR-notary}"
