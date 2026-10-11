@@ -40,7 +40,7 @@ fi
 
 if [[ -z "$AU_COMPONENT" ]]; then
   err "Nie znaleziono FSVR.component (szukano w bin/AU/ i build/bin/AU/)."
-  info "Uruchom najpierw build_au_macos.sh w tym folderze, a potem spróbuj ponownie."
+  info "Zbuduj najpierw wtyczkę (README.md, sekcja \"Building it\"), a potem spróbuj ponownie."
   exit 1
 fi
 ok "Znaleziono: $AU_COMPONENT"
