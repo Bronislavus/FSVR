@@ -33,6 +33,8 @@ the `.pkg` can be rebuilt or inspected on its own.
 
 ## Signing
 
-`pkgbuild`/`productbuild` produce an unsigned package. Signing needs an
-Apple Developer ID and `productsign`, not set up here — same situation as
-the `.dmg` itself (see `packaging/macos-dmg/README.md`).
+`build_pkg.sh [path/to/FSVR.component]` signs the package when
+`FSVR_SIGN_INSTALLER` names a "Developer ID Installer" identity, and notarizes
+and staples it when `FSVR_NOTARY_PROFILE` names a `notarytool` keychain profile.
+`build_dmg.sh --sign/--notarize` sets both and passes it the signed component;
+see `packaging/macos-dmg/README.md`.

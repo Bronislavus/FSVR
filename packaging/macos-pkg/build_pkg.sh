@@ -9,9 +9,14 @@
 # Run from the repo root, after building the plugin (README.md, section
 # "Building it"):
 #
-#   ./packaging/macos-pkg/build_pkg.sh
+#   ./packaging/macos-pkg/build_pkg.sh [ścieżka/do/FSVR.component]
 #
-# Called automatically by build_dmg.sh if this script is present next to it.
+# Called automatically by build_dmg.sh if this script is present next to it;
+# build_dmg.sh passes it the already-signed component from its staging dir.
+#
+# Optional, from the environment (build_dmg.sh --sign/--notarize sets them):
+#   FSVR_SIGN_INSTALLER  "Developer ID Installer: ..." — sign the .pkg
+#   FSVR_NOTARY_PROFILE  notarytool keychain profile — notarize and staple it
 #
 set -e
 
@@ -30,7 +35,10 @@ fi
 
 info "Szukam zbudowanej wtyczki AU..."
 AU_COMPONENT=""
-for candidate in "bin/AU/FSVR.component" "build/bin/AU/FSVR.component"; do
+if [[ -n "$1" ]]; then
+  if [[ -d "$1" ]]; then AU_COMPONENT="$(cd "$1" && pwd)"; else err "Nie ma takiego katalogu: $1"; exit 1; fi
+fi
+[[ -z "$AU_COMPONENT" ]] && for candidate in "bin/AU/FSVR.component" "build/bin/AU/FSVR.component"; do
   if [[ -d "$PROJECT_DIR/$candidate" ]]; then
     AU_COMPONENT="$PROJECT_DIR/$candidate"
     break
@@ -85,12 +93,38 @@ sed -e "s/@VERSION@/$VERSION/g" -e "s/@IDENTIFIER@/$IDENTIFIER/g" \
 
 OUT_PKG="$PROJECT_DIR/FSVR-${VERSION}-AU-Installer.pkg"
 rm -f "$OUT_PKG"
+SIGN_ARGS=()
+if [[ -n "$FSVR_SIGN_INSTALLER" ]]; then
+  info "Podpisuję .pkg: $FSVR_SIGN_INSTALLER"
+  SIGN_ARGS=(--sign "$FSVR_SIGN_INSTALLER" --timestamp)
+fi
 productbuild --distribution "$DIST_XML" \
   --resources "$RESOURCES" \
   --package-path "$WORKDIR" \
+  "${SIGN_ARGS[@]}" \
   "$OUT_PKG"
 
 rm -rf "$WORKDIR"
+
+if [[ -n "$FSVR_SIGN_INSTALLER" ]]; then
+  pkgutil --check-signature "$OUT_PKG" | head -3
+fi
+
+if [[ -n "$FSVR_NOTARY_PROFILE" ]]; then
+  if [[ -z "$FSVR_SIGN_INSTALLER" ]]; then
+    err "Notaryzacja wymaga podpisanego .pkg (FSVR_SIGN_INSTALLER)."
+    exit 1
+  fi
+  info "Wysyłam .pkg do notaryzacji Apple (zwykle 1–5 minut)..."
+  NOTARY_OUT="$(xcrun notarytool submit "$OUT_PKG" --keychain-profile "$FSVR_NOTARY_PROFILE" --wait 2>&1)" || true
+  echo "$NOTARY_OUT"
+  if ! grep -q "status: Accepted" <<<"$NOTARY_OUT"; then
+    err "Apple nie przyjęło .pkg. Szczegóły: xcrun notarytool log <id z góry> --keychain-profile \"$FSVR_NOTARY_PROFILE\""
+    exit 1
+  fi
+  xcrun stapler staple "$OUT_PKG"
+  ok ".pkg znotaryzowany i ostemplowany."
+fi
 
 ok "Gotowe!"
 echo ""

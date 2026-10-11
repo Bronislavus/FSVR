@@ -45,10 +45,24 @@ The zipped source is there because a `.dmg` is a binary distribution, and
 GPL-3 conditions that on the corresponding source being available with it,
 not just linked from a README.
 
-## Signing
+## Signing and notarization
 
-`hdiutil` produces an unsigned image. On any Mac other than the one that
-built it, Gatekeeper will warn on first launch of the installer script;
-`PRZECZYTAJ.txt` covers the right-click-Open workaround. Signing and
-notarizing needs an Apple Developer ID and `codesign`/`notarytool`, not set
-up here.
+```bash
+./packaging/macos-dmg/build_dmg.sh --sign             # Developer ID signatures
+./packaging/macos-dmg/build_dmg.sh --sign --notarize  # plus Apple notarization
+```
+
+`--sign` finds the "Developer ID Application" (plug-in, DMG) and "Developer
+ID Installer" (`.pkg`) identities in the keychain; `FSVR_SIGN_APP` and
+`FSVR_SIGN_INSTALLER` override them. The component is signed in the staging
+copy with the hardened runtime and a secure timestamp, so `bin/` keeps the
+compiler's output. `--notarize` submits the `.pkg` and then the DMG to Apple
+with `notarytool` and staples both; it reads a keychain profile, `FSVR-notary`
+unless `FSVR_NOTARY_PROFILE` says otherwise, stored once with:
+
+```bash
+xcrun notarytool store-credentials "FSVR-notary" --apple-id <e-mail> --team-id <TEAMID>
+```
+
+Without either flag the output is unsigned, as before: Gatekeeper warns on any
+Mac but the one that built it, and `PRZECZYTAJ.txt` covers the workaround.

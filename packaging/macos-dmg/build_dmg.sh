@@ -6,9 +6,29 @@
 # Buduj wtyczkę AU najpierw (README.md, sekcja "Building it"), potem
 # uruchom ten skrypt z korzenia repo:
 #
-#   ./packaging/macos-dmg/build_dmg.sh
+#   ./packaging/macos-dmg/build_dmg.sh                    bez podpisu
+#   ./packaging/macos-dmg/build_dmg.sh --sign             podpis Developer ID
+#   ./packaging/macos-dmg/build_dmg.sh --sign --notarize  podpis + notaryzacja
+#
+# --sign znajduje w pęku kluczy "Developer ID Application" (wtyczka, DMG)
+# i "Developer ID Installer" (.pkg); nadpiszesz je zmiennymi FSVR_SIGN_APP
+# i FSVR_SIGN_INSTALLER. --notarize używa profilu notarytool zapisanego raz:
+#
+#   xcrun notarytool store-credentials "FSVR-notary" --apple-id <e-mail> --team-id <TEAMID>
+#
+# (inna nazwa profilu: zmienna FSVR_NOTARY_PROFILE).
 #
 set -e
+
+DO_SIGN=0; DO_NOTARIZE=0
+for arg in "$@"; do
+  case "$arg" in
+    --sign) DO_SIGN=1 ;;
+    --notarize) DO_SIGN=1; DO_NOTARIZE=1 ;;
+    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
+    *) echo "Nieznana opcja: $arg (dozwolone: --sign, --notarize)"; exit 1 ;;
+  esac
+done
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 info()  { echo -e "${BLUE}ℹ️  $1${NC}"; }
@@ -51,6 +71,44 @@ if [[ ! -f "$PROJECT_DIR/LICENSE" ]]; then
   exit 1
 fi
 
+find_identity() {
+  security find-identity -v 2>/dev/null | grep "\"$1:" | head -1 | sed -E 's/^[^"]*"(.*)"$/\1/'
+}
+notarize() {  # $1 = file to submit and staple
+  info "Wysyłam $(basename "$1") do notaryzacji Apple (zwykle 1–5 minut)..."
+  local out
+  out="$(xcrun notarytool submit "$1" --keychain-profile "$NOTARY_PROFILE" --wait 2>&1)" || true
+  echo "$out"
+  if ! grep -q "status: Accepted" <<<"$out"; then
+    err "Apple nie przyjęło $(basename "$1"). Szczegóły: xcrun notarytool log <id z góry> --keychain-profile \"$NOTARY_PROFILE\""
+    exit 1
+  fi
+  xcrun stapler staple "$1"
+  ok "$(basename "$1") znotaryzowany i ostemplowany."
+}
+
+if [[ $DO_SIGN == 1 ]]; then
+  APP_ID="${FSVR_SIGN_APP:-$(find_identity "Developer ID Application")}"
+  INST_ID="${FSVR_SIGN_INSTALLER:-$(find_identity "Developer ID Installer")}"
+  if [[ -z "$APP_ID" || -z "$INST_ID" ]]; then
+    err "Brak certyfikatu Developer ID Application lub Developer ID Installer w pęku kluczy."
+    echo "  Sprawdź: security find-identity -v"
+    exit 1
+  fi
+  info "Podpis wtyczki i DMG: $APP_ID"
+  info "Podpis .pkg:          $INST_ID"
+  export FSVR_SIGN_INSTALLER="$INST_ID"
+  if [[ $DO_NOTARIZE == 1 ]]; then
+    NOTARY_PROFILE="${FSVR_NOTARY_PROFILE:-FSVR-notary}"
+    export FSVR_NOTARY_PROFILE="$NOTARY_PROFILE"
+    info "Profil notaryzacji:   $NOTARY_PROFILE"
+  else
+    unset FSVR_NOTARY_PROFILE
+  fi
+else
+  unset FSVR_SIGN_INSTALLER FSVR_NOTARY_PROFILE
+fi
+
 VERSION="$(grep -oE 'VERSION [0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt | head -1 | awk '{print $2}')"
 VERSION="${VERSION:-0.0.0}"
 VOL_NAME="FSVR ${VERSION} AU Installer"
@@ -63,6 +121,20 @@ mkdir -p "$STAGING"
 
 info "Kopiuję wtyczkę AU..."
 cp -R "$AU_COMPONENT" "$STAGING/FSVR.component"
+
+if [[ $DO_SIGN == 1 ]]; then
+  # The copy in staging is signed, so bin/ keeps the build as it came out of
+  # the compiler. Nested code first, then the bundle; hardened runtime and a
+  # secure timestamp are what notarization requires.
+  info "Podpisuję wtyczkę (hardened runtime + znacznik czasu Apple)..."
+  while IFS= read -r -d '' nested; do
+    codesign --force --options runtime --timestamp --sign "$APP_ID" "$nested"
+  done < <(find "$STAGING/FSVR.component/Contents" -depth \
+             \( -name "*.dylib" -o -name "*.framework" -o -name "*.bundle" -o -name "*.appex" \) -print0)
+  codesign --force --options runtime --timestamp --sign "$APP_ID" "$STAGING/FSVR.component"
+  codesign --verify --strict --verbose=2 "$STAGING/FSVR.component"
+  ok "Wtyczka podpisana."
+fi
 
 info "Kopiuję dokumentację i licencję..."
 cp "$PROJECT_DIR/LICENSE" "$STAGING/LICENSE.txt"
@@ -93,7 +165,7 @@ chmod +x "$STAGING/Zainstaluj FSVR.command"
 PKG_BUILDER="$SCRIPT_DIR/../macos-pkg/build_pkg.sh"
 if [[ -x "$PKG_BUILDER" ]]; then
   info "Buduję też klasyczny instalator .pkg (kreator z autorami i licencją)..."
-  ( cd "$PROJECT_DIR" && "$PKG_BUILDER" )
+  ( cd "$PROJECT_DIR" && "$PKG_BUILDER" "$STAGING/FSVR.component" )
   PKG_FILE="$(ls "$PROJECT_DIR"/FSVR-*-AU-Installer.pkg 2>/dev/null | head -1)"
   if [[ -n "$PKG_FILE" ]]; then
     cp "$PKG_FILE" "$STAGING/"
@@ -122,6 +194,17 @@ hdiutil create -volname "$VOL_NAME" \
   "$PROJECT_DIR/$DMG_NAME"
 
 rm -rf "$(dirname "$STAGING")"
+
+if [[ $DO_SIGN == 1 ]]; then
+  info "Podpisuję DMG..."
+  codesign --force --timestamp --sign "$APP_ID" "$PROJECT_DIR/$DMG_NAME"
+  codesign --verify --verbose=2 "$PROJECT_DIR/$DMG_NAME"
+fi
+if [[ $DO_NOTARIZE == 1 ]]; then
+  notarize "$PROJECT_DIR/$DMG_NAME"
+  info "Ocena Gatekeepera:"
+  spctl --assess --type open --context context:primary-signature -v "$PROJECT_DIR/$DMG_NAME" || true
+fi
 
 ok "Gotowe!"
 echo ""
